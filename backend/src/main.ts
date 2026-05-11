@@ -3,6 +3,13 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+// Money is stored in cents as BigInt. JSON.stringify cannot serialize BigInt
+// natively; the values we hold (cents) always fit Number.MAX_SAFE_INTEGER, so
+// emit them as plain numbers.
+(BigInt.prototype as unknown as { toJSON: () => number }).toJSON = function () {
+  return Number(this as unknown as bigint);
+};
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
 
