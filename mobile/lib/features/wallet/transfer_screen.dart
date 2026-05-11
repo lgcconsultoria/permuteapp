@@ -35,8 +35,9 @@ class _TransferScreenState extends ConsumerState<TransferScreen> {
     });
     try {
       final dio = ref.read(apiClientProvider);
+      final cleanCnpj = _cnpj.text.replaceAll(RegExp(r'\D'), '');
       final lookup = await dio.get<Map<String, dynamic>>(
-        '/companies/by-cnpj/${_cnpj.text.trim()}',
+        '/companies/by-cnpj/$cleanCnpj',
       );
       final toCompanyId = lookup.data!['id'] as String;
 
