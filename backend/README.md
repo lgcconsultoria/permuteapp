@@ -16,10 +16,22 @@ API REST do PermuteApp em NestJS + Prisma + PostgreSQL.
 cp .env.example .env
 npm install
 npx prisma migrate dev --name init
+npx prisma db seed       # popula 3 empresas + 5 ofertas + saldos
 npm run start:dev
 ```
 
 Swagger: `http://localhost:3000/docs`
+
+### Credenciais de teste (após `prisma db seed`)
+
+| Empresa            | Email   | Senha       | Saldo       |
+| ------------------ | ------- | ----------- | ----------- |
+| Hotel Aurora       | a@a.com | senha-1234  | UP$ 1.000   |
+| BetaLog Transportes| b@b.com | senha-1234  | UP$ 500     |
+| Gamma Marketing    | c@c.com | senha-1234  | UP$ 2.000   |
+
+O seed é idempotente: rodar de novo reseta apenas os saldos e não duplica
+ofertas/empresas.
 
 ## Modelo de dados
 
