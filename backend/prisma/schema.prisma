@@ -1,0 +1,135 @@
+// PermuteApp - Prisma schema
+//
+// Domain model for the MVP:
+// - Company: associated business (the actor in the network)
+// - Wallet: 1:1 with Company; stores credit balance in cents
+// - Offer: product/service listed by a Company
+// - LedgerEntry: double-entry bookkeeping for every credit movement
+// - Transaction: groups paired LedgerEntries (one DEBIT + one CREDIT)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CompanyStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum OfferStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum TransactionType {
+  TRANSFER       // P2P credit transfer
+  OFFER_PAYMENT  // payment for an offer
+  ADJUSTMENT     // admin manual adjustment
+}
+
+enum LedgerEntryKind {
+  DEBIT
+  CREDIT
+}
+
+model Company {
+  id            String        @id @default(uuid())
+  cnpj          String        @unique
+  razaoSocial   String
+  nomeFantasia  String?
+  email         String        @unique
+  phone         String?
+  passwordHash  String
+  status        CompanyStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  wallet        Wallet?
+  offers        Offer[]
+  refreshTokens RefreshToken[]
+
+  @@index([status])
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  companyId   String
+  tokenHash   String   @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model Wallet {
+  id           String   @id @default(uuid())
+  companyId    String   @unique
+  balanceCents BigInt   @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company      Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  entries      LedgerEntry[]
+}
+
+model Offer {
+  id          String      @id @default(uuid())
+  companyId   String
+  title       String
+  description String
+  priceCents  BigInt
+  category    String?
+  status      OfferStatus @default(ACTIVE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([status])
+  @@index([category])
+  @@index([companyId])
+}
+
+model Transaction {
+  id            String          @id @default(uuid())
+  type          TransactionType
+  amountCents   BigInt
+  description   String?
+  offerId       String?
+  createdAt     DateTime        @default(now())
+
+  offer         Offer?          @relation(fields: [offerId], references: [id])
+  entries       LedgerEntry[]
+
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Double-entry bookkeeping: every Transaction has exactly two
+// LedgerEntries (one DEBIT and one CREDIT) of the same amount.
+model LedgerEntry {
+  id              String          @id @default(uuid())
+  transactionId   String
+  walletId        String
+  kind            LedgerEntryKind
+  amountCents     BigInt
+  balanceAfter    BigInt
+  createdAt       DateTime        @default(now())
+
+  transaction     Transaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  wallet          Wallet          @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId, createdAt])
+  @@index([transactionId])
+}
