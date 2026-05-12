@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # Multi-stage build:
 #   1) Flutter SDK builds the web bundle
 #   2) Node builds the NestJS API
@@ -7,7 +6,7 @@
 # Build context must be the repo root (see docker-compose.yml).
 
 ############### 1. Flutter web ###############
-FROM ghcr.io/cirruslabs/flutter:3.27.4 AS flutter
+FROM instrumentisto/flutter:3.27 AS flutter
 WORKDIR /flutter
 COPY mobile/pubspec.yaml mobile/pubspec.lock ./
 RUN flutter pub get
@@ -29,9 +28,6 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install ts-node at runtime so `prisma db seed` can execute seed.ts.
-RUN apk add --no-cache tini
-
 COPY --from=api-build /app/dist ./dist
 COPY --from=api-build /app/node_modules ./node_modules
 COPY --from=api-build /app/prisma ./prisma
@@ -42,5 +38,5 @@ COPY backend/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 3000
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "dist/main.js"]
