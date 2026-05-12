@@ -15,9 +15,9 @@ COPY mobile/ ./
 RUN flutter build web --release --no-web-resources-cdn
 
 ############### 2. NestJS build ###############
-FROM node:20-slim AS api-build
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+# node:20 (full Debian) já inclui openssl + ca-certificates, necessários
+# para o Prisma. As variantes -slim/-alpine exigiriam apt/apk extra.
+FROM node:20 AS api-build
 WORKDIR /app
 COPY backend/package.json backend/package-lock.json ./
 COPY backend/prisma ./prisma
@@ -26,9 +26,7 @@ COPY backend/ ./
 RUN npx prisma generate && npm run build
 
 ############### 3. Runtime ###############
-FROM node:20-slim
-RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
- && rm -rf /var/lib/apt/lists/*
+FROM node:20
 WORKDIR /app
 ENV NODE_ENV=production
 
