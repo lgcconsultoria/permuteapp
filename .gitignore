@@ -27,3 +27,9 @@ yarn-error.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Local-only: extra CA certs injected at build time when behind a
+# TLS-intercepting egress (corporate proxy). Not committed.
+ca-certs/*.crt
+docker-compose.override.yml
+Dockerfile.local
