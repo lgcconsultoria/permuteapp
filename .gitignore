@@ -8,6 +8,9 @@ coverage/
 .env.local
 .env.*.local
 
+# Bundled Flutter web copy used at runtime (built inside Docker)
+backend/web/
+
 # Logs
 logs/
 *.log
