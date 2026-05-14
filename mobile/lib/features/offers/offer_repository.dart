@@ -50,6 +50,16 @@ class OfferRepository {
     return items.map((e) => Offer.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  Future<List<Offer>> listMine() async {
+    final res = await _dio.get<List<dynamic>>('/offers/mine');
+    return (res.data ?? [])
+        .map((e) => Offer.fromJson({
+              ...(e as Map<String, dynamic>),
+              'company': null,
+            }))
+        .toList();
+  }
+
   Future<Offer> create({
     required String title,
     required String description,
@@ -66,6 +76,10 @@ class OfferRepository {
       },
     );
     return Offer.fromJson({...res.data!, 'company': null});
+  }
+
+  Future<void> delete(String id) async {
+    await _dio.delete<void>('/offers/$id');
   }
 }
 
